@@ -2,93 +2,998 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gestión de Solicitudes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Formulario de Solicitudes</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #f4f6f9;
-      font-family: system-ui, -apple-system, sans-serif;
+    body { background-color: #f4f6f9; font-family: system-ui, -apple-system, sans-serif; }
+    .app-container { max-width: 820px; margin: 16px auto; padding: 0 12px; }
+    .segment-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border-left: 5px solid #0d6efd;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 18px;
+      margin-bottom: 16px;
     }
-    .fallback-box {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      text-align: center;
+    .segment-card.segment-extra { border-left-color: #198754; }
+    .segment-card.segment-geo { border-left-color: #fd7e14; }
+    .segment-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       color: #495057;
-    }
-    .spinner {
-      width: 38px;
-      height: 38px;
-      border: 4px solid #dee2e6;
-      border-top-color: #0d6efd;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
       margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .btn-direct {
-      margin-top: 16px;
-      padding: 12px 20px;
-      background: #0d6efd;
-      color: #ffffff;
-      text-decoration: none;
+    .hidden-field { display: none !important; }
+    .nav-pills .nav-link { font-weight: 600; border-radius: 10px; }
+    #loaderOverlay {
+      position: fixed; inset: 0; background: rgba(255,255,255,0.85);
+      z-index: 9999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    #loginGate {
+      position: fixed; inset: 0; background: #f4f6f9;
+      z-index: 10000; display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .login-card {
+      max-width: 420px; width: 100%; background: #ffffff;
+      border-radius: 16px; padding: 28px 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      border-top: 6px solid #0d6efd;
+    }
+    .user-session-bar {
+      background: #e7f1ff; border: 1px solid #b6d4fe; color: #084298;
+      border-radius: 10px; padding: 8px 14px; font-size: 0.86rem;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .table-responsive { border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .btn-check:checked + .btn-tipo {
+      background-color: #0d6efd;
+      color: #fff;
+      border-color: #0d6efd;
+      box-shadow: 0 2px 6px rgba(13, 110, 253, 0.35);
+    }
+    .photo-box {
+      border: 1.5px dashed #ced4da;
       border-radius: 10px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      box-shadow: 0 3px 10px rgba(13, 110, 253, 0.25);
+      padding: 12px;
+      background-color: #f8f9fa;
     }
-    iframe {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: none;
-      background: transparent;
+    .photo-preview-img {
+      max-height: 130px;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+      object-fit: cover;
     }
   </style>
 </head>
 <body>
 
-  <div class="fallback-box">
-    <div class="spinner"></div>
-    <div>Abriendo formulario de solicitudes...</div>
-    <small style="margin-top: 6px; color: #6c757d;">Si no carga automáticamente en 5 segundos, toca el botón:</small>
-    <a class="btn-direct" href="https://script.google.com/macros/s/AKfycbwarf1blsux_9W71zyZs8geGTohQLp3DS3kJHRwvVSdWRDp1cdrlFGYL0R7ZWmeUwOH/exec">
-      Abrir formulario directamente
-    </a>
+<!-- PANTALLA INICIAL DE IDENTIFICACIÓN POR CORREO -->
+<div id="loginGate">
+  <div class="login-card">
+    <div class="text-center mb-3">
+      <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 56px; height: 56px;">
+        <i class="bi bi-envelope-check-fill fs-3"></i>
+      </div>
+      <h5 class="fw-bold mb-1">Identificación de Usuario</h5>
+      <p class="text-muted small mb-0">Ingresa tu correo electrónico para registrar tus solicitudes.</p>
+    </div>
+    <form onsubmit="confirmUserEmail(event)">
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">CORREO ELECTRÓNICO *</label>
+        <input type="email" class="form-control form-control-lg" id="login_email_input" placeholder="ejemplo@correo.com" required autocomplete="email">
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold">
+        Continuar al Formulario <i class="bi bi-arrow-right ms-1"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<div id="loaderOverlay">
+  <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+  <div class="mt-2 fw-semibold text-secondary" id="loaderText">Cargando datos...</div>
+</div>
+
+<div class="app-container">
+  <!-- BARRA SUPERIOR CON EL CORREO IDENTIFICADO -->
+  <div class="user-session-bar">
+    <div class="text-truncate me-2">
+      <i class="bi bi-person-check-fill me-1"></i>
+      <span class="fw-semibold" id="activeUserEmailDisplay">-</span>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 flex-shrink-0" onclick="changeUserEmail()">
+      Cambiar
+    </button>
   </div>
 
-  <iframe id="appFrame" allow="geolocation *; camera *; microphone *" allowfullscreen></iframe>
+  <!-- NAVEGACIÓN PRINCIPAL: 2 ENTRADAS -->
+  <ul class="nav nav-pills nav-fill bg-white p-2 rounded-3 shadow-sm mb-3" id="mainTabs">
+    <li class="nav-item">
+      <button class="nav-link active" id="tab-ingreso" onclick="switchTab('ingreso')">
+        <i class="bi bi-plus-circle me-1"></i> INGRESO
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="tab-modificacion" onclick="switchTab('modificacion')">
+        <i class="bi bi-pencil-square me-1"></i> MODIFICACIÓN
+      </button>
+    </li>
+  </ul>
 
-  <script>
-    (async function () {
-      const EXEC_URL = "https://script.google.com/macros/s/AKfycbwarf1blsux_9W71zyZs8geGTohQLp3DS3kJHRwvVSdWRDp1cdrlFGYL0R7ZWmeUwOH/exec";
-      const ua = navigator.userAgent || "";
+  <!-- ========================================================= -->
+  <!-- VISTA 1: INGRESO                                          -->
+  <!-- ========================================================= -->
+  <div id="view-ingreso">
+    <form id="formIngreso" onsubmit="handleSave(event)">
+      
+      <!-- SEGMENTO 1: DATOS OBLIGATORIOS SIEMPRE VISIBLES -->
+      <div class="segment-card">
+        <div class="segment-title"><i class="bi bi-person-badge text-primary"></i> 1. Datos Base del Registro</div>
+        <div class="row g-3">
+          
+          <!-- BOTÓN TIPO SIEMPRE VISIBLE (4 OPCIONES) -->
+          <div class="col-12">
+            <label class="form-label fw-semibold d-block">TIPO *</label>
+            <div class="row g-2" role="group" aria-label="Selector de Tipo">
+              <div class="col-6 col-md-3">
+                <input type="radio" class="btn-check" name="in_tipo" id="in_tipo_ferias" value="FERIAS" required>
+                <label class="btn btn-outline-primary btn-tipo w-100 fw-semibold py-2" for="in_tipo_ferias">FERIAS</label>
+              </div>
+              <div class="col-6 col-md-3">
+                <input type="radio" class="btn-check" name="in_tipo" id="in_tipo_mercado" value="MERCADO">
+                <label class="btn btn-outline-primary btn-tipo w-100 fw-semibold py-2" for="in_tipo_mercado">MERCADO</label>
+              </div>
+              <div class="col-6 col-md-3">
+                <input type="radio" class="btn-check" name="in_tipo" id="in_tipo_pdve2" value="PDV E2">
+                <label class="btn btn-outline-primary btn-tipo w-100 fw-semibold py-2" for="in_tipo_pdve2">PDV E2</label>
+              </div>
+              <div class="col-6 col-md-3">
+                <input type="radio" class="btn-check" name="in_tipo" id="in_tipo_pdvplus" value="PDV PLUS">
+                <label class="btn btn-outline-primary btn-tipo w-100 fw-semibold py-2" for="in_tipo_pdvplus">PDV PLUS</label>
+              </div>
+            </div>
+          </div>
 
-      const isBrave = !!(navigator.brave && await navigator.brave.isBrave());
-      // Solo Google Chrome (Android/PC) usa iframe; Edge y los demás navegadores van directo a /exec
-      const isGoogleChrome = /Chrome/i.test(ua) && !/Edg|EdgA|EdgiOS|OPR|Opera|SamsungBrowser|UCBrowser|Vivaldi|DuckDuckGo|CriOS/i.test(ua) && !isBrave;
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">VENDEDOR *</label>
+            <select class="form-select" id="in_vendedor" required>
+              <option value="">Seleccione vendedor...</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">TIPO DE SOLICITUD *</label>
+            <select class="form-select" id="in_solicitud" onchange="applyConditionalRules('in')" required>
+              <option value="">Seleccione solicitud...</option>
+            </select>
+          </div>
 
-      if (!isGoogleChrome) {
-        window.location.replace(EXEC_URL);
-        return;
+          <!-- MENÚ DESPLEGABLE SOLO SI SOLICITUD = ACTUALIZACIÓN -->
+          <div class="col-12 hidden-field" id="in_wrap_tipoActualizacion">
+            <div class="p-3 bg-light rounded border border-warning">
+              <label class="form-label fw-bold text-dark">SUB-OPCIÓN DE ACTUALIZACIÓN *</label>
+              <select class="form-select border-warning" id="in_tipoActualizacion" onchange="applyConditionalRules('in')">
+                <option value="">Seleccione qué desea actualizar...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">NÚMERO DE DOCUMENTO *</label>
+            <input type="text" inputmode="numeric" class="form-control" id="in_numeroDocumento" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">NOMBRES *</label>
+            <input type="text" class="form-control text-uppercase" id="in_nombres" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">PATERNO *</label>
+            <input type="text" class="form-control text-uppercase" id="in_paterno" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">MATERNO *</label>
+            <input type="text" class="form-control text-uppercase" id="in_materno" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEGMENTO 2: CONTACTO Y LÍDER (CONDICIONAL) -->
+      <div class="segment-card segment-extra hidden-field" id="in_seg_contacto">
+        <div class="segment-title"><i class="bi bi-telephone-fill text-success"></i> 2. Datos de Contacto / Líder</div>
+        <div class="row g-3">
+          <div class="col-md-6 hidden-field" id="in_wrap_email">
+            <label class="form-label fw-semibold">EMAIL *</label>
+            <input type="email" class="form-control" id="in_email">
+          </div>
+          <div class="col-md-6 hidden-field" id="in_wrap_phoneNumber">
+            <label class="form-label fw-semibold">PHONENUMBER *</label>
+            <input type="tel" class="form-control" id="in_phoneNumber">
+          </div>
+          <div class="col-md-6 hidden-field" id="in_wrap_dniLider">
+            <label class="form-label fw-semibold">DNI LIDER *</label>
+            <input type="text" inputmode="numeric" class="form-control" id="in_dniLider">
+          </div>
+        </div>
+      </div>
+
+      <!-- SEGMENTO 3: UBICACIÓN, COORDENADAS MANUALES Y FOTOS (CONDICIONAL) -->
+      <div class="segment-card segment-geo hidden-field" id="in_seg_ubicacion">
+        <div class="segment-title"><i class="bi bi-geo-alt-fill text-warning"></i> 3. Ubicación y Evidencia Fotográfica</div>
+        <div class="row g-3">
+          <div class="col-md-5 hidden-field" id="in_wrap_distrito">
+            <label class="form-label fw-semibold">DISTRITO *</label>
+            <input type="text" class="form-control text-uppercase" id="in_distrito">
+          </div>
+          <div class="col-md-7 hidden-field" id="in_wrap_direccion">
+            <label class="form-label fw-semibold">DIRECCIÓN *</label>
+            <input type="text" class="form-control text-uppercase" id="in_direccion">
+          </div>
+
+          <div class="col-6 hidden-field" id="in_wrap_latitud">
+            <label class="form-label fw-semibold">LATITUD (Manual) *</label>
+            <input type="text" inputmode="decimal" class="form-control" id="in_latitud" placeholder="-12.046374">
+          </div>
+          <div class="col-6 hidden-field" id="in_wrap_longitud">
+            <label class="form-label fw-semibold">LONGITUD (Manual) *</label>
+            <input type="text" inputmode="decimal" class="form-control" id="in_longitud" placeholder="-77.042793">
+          </div>
+
+          <!-- FOTO DE DNI (CÁMARA O BÚSQUEDA) -->
+          <div class="col-md-6 hidden-field" id="in_wrap_fotoDni">
+            <label class="form-label fw-semibold">FOTO DE DNI *</label>
+            <div class="photo-box">
+              <input type="file" class="d-none" id="in_fotoDni_cam" accept="image/*" capture="environment" onchange="onPhotoSelected('in_fotoDni', this)">
+              <input type="file" class="d-none" id="in_fotoDni_gal" accept="image/*" onchange="onPhotoSelected('in_fotoDni', this)">
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-primary btn-sm w-50" onclick="document.getElementById('in_fotoDni_cam').click()">
+                  <i class="bi bi-camera-fill me-1"></i> Cámara
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm w-50" onclick="document.getElementById('in_fotoDni_gal').click()">
+                  <i class="bi bi-folder2-open me-1"></i> Buscar / Galería
+                </button>
+              </div>
+              <small class="text-muted d-block mt-2">Foto nítida del documento de identidad.</small>
+              <div id="prev_in_fotoDni" class="mt-2"></div>
+            </div>
+          </div>
+
+          <!-- FOTO COORDENADA (CÁMARA O BÚSQUEDA) -->
+          <div class="col-md-6 hidden-field" id="in_wrap_fotoCoord">
+            <label class="form-label fw-semibold">FOTO DEL ESTABLECIMIENTO (CON COORDENADA TIMESTAMP) *</label>
+            <div class="photo-box">
+              <input type="file" class="d-none" id="in_fotoCoord_cam" accept="image/*" capture="environment" onchange="onPhotoSelected('in_fotoCoord', this)">
+              <input type="file" class="d-none" id="in_fotoCoord_gal" accept="image/*" onchange="onPhotoSelected('in_fotoCoord', this)">
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-primary btn-sm w-50" onclick="document.getElementById('in_fotoCoord_cam').click()">
+                  <i class="bi bi-camera-fill me-1"></i> Cámara
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm w-50" onclick="document.getElementById('in_fotoCoord_gal').click()">
+                  <i class="bi bi-folder2-open me-1"></i> Buscar / Galería
+                </button>
+              </div>
+              <small class="text-muted d-block mt-2">
+                Subir foto del establecimiento tomada con la app <strong>Timestamp</strong> donde se visualice la coordenada y fecha/hora.
+              </small>
+              <div id="prev_in_fotoCoord" class="mt-2"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <button type="submit" id="btnSubmitIngreso" class="btn btn-primary btn-lg w-100 shadow-sm mb-4">
+        <i class="bi bi-cloud-arrow-up-fill me-1"></i> Guardar Solicitud
+      </button>
+    </form>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- VISTA 2: MODIFICACIÓN (FILTROS + LISTADO + EDITAR/BORRAR) -->
+  <!-- ========================================================= -->
+  <div id="view-modificacion" class="hidden-field">
+    <div class="segment-card">
+      <div class="segment-title"><i class="bi bi-funnel-fill text-primary"></i> Filtrar Registros</div>
+      <div class="row g-2">
+        <div class="col-md-5">
+          <label class="form-label small fw-bold">Filtrar por Vendedor</label>
+          <select class="form-select" id="filter_vendedor" onchange="renderTable()">
+            <option value="">-- Todos los vendedores --</option>
+          </select>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label small fw-bold">Filtrar por DNI (N° Documento)</label>
+          <input type="text" class="form-control" id="filter_dni" placeholder="Escribe el DNI..." oninput="renderTable()">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="button" class="btn btn-outline-secondary w-100" onclick="loadRecords()">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>DNI</th>
+            <th>Nombre Completo</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBody">
+          <tr><td colspan="5" class="text-center py-4 text-muted">No hay registros para mostrar.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- MODAL DE EDICIÓN                                          -->
+<!-- ========================================================= -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="bi bi-pencil-square me-1"></i> Modificar Registro</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEdit" onsubmit="handleUpdate(event)">
+          <input type="hidden" id="ed_id">
+          <div class="row g-3">
+
+            <!-- BOTÓN TIPO EN EDICIÓN -->
+            <div class="col-12">
+              <label class="form-label fw-semibold d-block">TIPO *</label>
+              <div class="row g-2" role="group" aria-label="Editar Tipo">
+                <div class="col-6 col-md-3">
+                  <input type="radio" class="btn-check" name="ed_tipo" id="ed_tipo_ferias" value="FERIAS" required>
+                  <label class="btn btn-outline-primary btn-tipo w-100 fw-semibold py-2" for="ed_tipo_ferias">FERIAS</label>
+                </div>
+                <div class="col-6 col-md-3">
+                  <input type="radio" class="btn-check" name="ed_tipo" id="ed_tipo_mercado" value="MERCADO">
+                  <label class="btn btn-outline-primary btn-tipo w-100 fw-semibold py-2" for="ed_tipo_mercado">MERCADO</label>
+                </div>
+                <div class="col-6 col-md-3">
+                  <input type="radio" class="btn-check" name="ed_tipo" id="ed_tipo_pdve2" value="PDV E2">
+                  <label class="btn btn-outline-primary btn-tipo w-100 fw-semibold py-2" for="ed_tipo_pdve2">PDV E2</label>
+                </div>
+                <div class="col-6 col-md-3">
+                  <input type="radio" class="btn-check" name="ed_tipo" id="ed_tipo_pdvplus" value="PDV PLUS">
+                  <label class="btn btn-outline-primary btn-tipo w-100 fw-semibold py-2" for="ed_tipo_pdvplus">PDV PLUS</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">ESTADO</label>
+              <select class="form-select fw-bold" id="ed_estado">
+                <option value="PENDIENTE">PENDIENTE</option>
+                <option value="PROCESADO">PROCESADO</option>
+                <option value="OBSERVADO">OBSERVADO</option>
+                <option value="RECHAZADO">RECHAZADO</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">VENDEDOR *</label>
+              <select class="form-select" id="ed_vendedor" required></select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">TIPO DE SOLICITUD *</label>
+              <select class="form-select" id="ed_solicitud" onchange="applyConditionalRules('ed')" required></select>
+            </div>
+
+            <div class="col-12 hidden-field" id="ed_wrap_tipoActualizacion">
+              <label class="form-label fw-bold">SUB-OPCIÓN DE ACTUALIZACIÓN *</label>
+              <select class="form-select" id="ed_tipoActualizacion" onchange="applyConditionalRules('ed')"></select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">NÚMERO DE DOCUMENTO *</label>
+              <input type="text" class="form-control" id="ed_numeroDocumento" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">NOMBRES *</label>
+              <input type="text" class="form-control text-uppercase" id="ed_nombres" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">PATERNO *</label>
+              <input type="text" class="form-control text-uppercase" id="ed_paterno" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">MATERNO *</label>
+              <input type="text" class="form-control text-uppercase" id="ed_materno" required>
+            </div>
+
+            <div class="col-md-6 hidden-field" id="ed_wrap_email">
+              <label class="form-label fw-semibold">EMAIL *</label>
+              <input type="email" class="form-control" id="ed_email">
+            </div>
+            <div class="col-md-6 hidden-field" id="ed_wrap_phoneNumber">
+              <label class="form-label fw-semibold">PHONENUMBER *</label>
+              <input type="tel" class="form-control" id="ed_phoneNumber">
+            </div>
+            <div class="col-md-6 hidden-field" id="ed_wrap_dniLider">
+              <label class="form-label fw-semibold">DNI LIDER *</label>
+              <input type="text" class="form-control" id="ed_dniLider">
+            </div>
+
+            <div class="col-md-5 hidden-field" id="ed_wrap_distrito">
+              <label class="form-label fw-semibold">DISTRITO *</label>
+              <input type="text" class="form-control text-uppercase" id="ed_distrito">
+            </div>
+            <div class="col-md-7 hidden-field" id="ed_wrap_direccion">
+              <label class="form-label fw-semibold">DIRECCIÓN *</label>
+              <input type="text" class="form-control text-uppercase" id="ed_direccion">
+            </div>
+
+            <div class="col-6 hidden-field" id="ed_wrap_latitud">
+              <label class="form-label fw-semibold">LATITUD (Manual) *</label>
+              <input type="text" inputmode="decimal" class="form-control" id="ed_latitud">
+            </div>
+            <div class="col-6 hidden-field" id="ed_wrap_longitud">
+              <label class="form-label fw-semibold">LONGITUD (Manual) *</label>
+              <input type="text" inputmode="decimal" class="form-control" id="ed_longitud">
+            </div>
+
+            <!-- REEMPLAZAR FOTO DNI (CÁMARA O BÚSQUEDA) -->
+            <div class="col-md-6 hidden-field" id="ed_wrap_fotoDni">
+              <label class="form-label fw-semibold">REEMPLAZAR FOTO DNI (Opcional)</label>
+              <div class="photo-box">
+                <input type="file" class="d-none" id="ed_fotoDni_cam" accept="image/*" capture="environment" onchange="onPhotoSelected('ed_fotoDni', this)">
+                <input type="file" class="d-none" id="ed_fotoDni_gal" accept="image/*" onchange="onPhotoSelected('ed_fotoDni', this)">
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-outline-primary btn-sm w-50" onclick="document.getElementById('ed_fotoDni_cam').click()">
+                    <i class="bi bi-camera-fill me-1"></i> Cámara
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm w-50" onclick="document.getElementById('ed_fotoDni_gal').click()">
+                    <i class="bi bi-folder2-open me-1"></i> Buscar / Galería
+                  </button>
+                </div>
+                <div id="prev_ed_fotoDni" class="mt-2"></div>
+                <div id="ed_linkFotoDni" class="small mt-1"></div>
+              </div>
+            </div>
+
+            <!-- REEMPLAZAR FOTO COORDENADA (CÁMARA O BÚSQUEDA) -->
+            <div class="col-md-6 hidden-field" id="ed_wrap_fotoCoord">
+              <label class="form-label fw-semibold">REEMPLAZAR FOTO ESTABLECIMIENTO (TIMESTAMP) (Opcional)</label>
+              <div class="photo-box">
+                <input type="file" class="d-none" id="ed_fotoCoord_cam" accept="image/*" capture="environment" onchange="onPhotoSelected('ed_fotoCoord', this)">
+                <input type="file" class="d-none" id="ed_fotoCoord_gal" accept="image/*" onchange="onPhotoSelected('ed_fotoCoord', this)">
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-outline-primary btn-sm w-50" onclick="document.getElementById('ed_fotoCoord_cam').click()">
+                    <i class="bi bi-camera-fill me-1"></i> Cámara
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm w-50" onclick="document.getElementById('ed_fotoCoord_gal').click()">
+                    <i class="bi bi-folder2-open me-1"></i> Buscar / Galería
+                  </button>
+                </div>
+                <small class="text-muted d-block mt-1">Foto del establecimiento con la coordenada del Timestamp.</small>
+                <div id="prev_ed_fotoCoord" class="mt-2"></div>
+                <div id="ed_linkFotoCoord" class="small mt-1"></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="mt-4 text-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" id="btnSubmitEdit" class="btn btn-success"><i class="bi bi-check-lg"></i> Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const EXEC_URL = "https://script.google.com/macros/s/AKfycbwarf1blsux_9W71zyZs8geGTohQLp3DS3kJHRwvVSdWRDp1cdrlFGYL0R7ZWmeUwOH/exec";
+  const STORAGE_EMAIL_KEY = "solicitudes_user_email";
+
+  let currentUserEmail = "";
+  let allRecords = [];
+  let editModalInstance = null;
+  let cachedInstantCoords = "";
+
+  const photoFiles = {
+    in_fotoDni: null,
+    in_fotoCoord: null,
+    ed_fotoDni: null,
+    ed_fotoCoord: null
+  };
+
+  // Comunicación directa sin enviar cookies de Google (evita error /u/1/ en cualquier navegador)
+  async function apiGet(action) {
+    const url = `${EXEC_URL}?action=${encodeURIComponent(action)}&_t=${Date.now()}`;
+    const resp = await fetch(url, {
+      method: "GET",
+      credentials: "omit",
+      redirect: "follow"
+    });
+    if (!resp.ok) throw new Error("Error de conexión (" + resp.status + ")");
+    const json = await resp.json();
+    if (json.status === "error") throw new Error(json.message);
+    return json.data;
+  }
+
+  async function apiPost(action, bodyObj) {
+    const resp = await fetch(EXEC_URL, {
+      method: "POST",
+      credentials: "omit",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(Object.assign({ action: action }, bodyObj))
+    });
+    if (!resp.ok) throw new Error("Error de conexión (" + resp.status + ")");
+    const json = await resp.json();
+    if (json.status === "error") throw new Error(json.message);
+    return json;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    editModalInstance = new bootstrap.Modal(document.getElementById('editModal'));
+    checkSavedUserEmail();
+    startBackgroundGPS();
+    initApp();
+  });
+
+  function checkSavedUserEmail() {
+    let saved = "";
+    try {
+      saved = localStorage.getItem(STORAGE_EMAIL_KEY) || "";
+    } catch (e) {}
+
+    if (saved && saved.includes("@")) {
+      setActiveUserEmail(saved);
+    } else {
+      document.getElementById('loginGate').classList.remove('hidden-field');
+    }
+  }
+
+  function confirmUserEmail(e) {
+    e.preventDefault();
+    const input = document.getElementById('login_email_input');
+    const val = input.value.trim().toLowerCase();
+    if (!val || !val.includes("@")) {
+      return alert("Por favor, ingresa un correo electrónico válido.");
+    }
+    try {
+      localStorage.setItem(STORAGE_EMAIL_KEY, val);
+    } catch (err) {}
+    setActiveUserEmail(val);
+  }
+
+  function setActiveUserEmail(email) {
+    currentUserEmail = email;
+    document.getElementById('activeUserEmailDisplay').textContent = email;
+    document.getElementById('loginGate').classList.add('hidden-field');
+  }
+
+  function changeUserEmail() {
+    const input = document.getElementById('login_email_input');
+    input.value = currentUserEmail;
+    document.getElementById('loginGate').classList.remove('hidden-field');
+    setTimeout(() => input.focus(), 100);
+  }
+
+  function startBackgroundGPS() {
+    if (!navigator.geolocation) {
+      cachedInstantCoords = "No soportado";
+      return;
+    }
+    navigator.geolocation.watchPosition(
+      pos => {
+        cachedInstantCoords = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+      },
+      err => {
+        if (!cachedInstantCoords) cachedInstantCoords = "Sin permiso / No disponible";
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+    );
+  }
+
+  function getFastCoords() {
+    if (cachedInstantCoords && cachedInstantCoords.includes(",")) {
+      return Promise.resolve(cachedInstantCoords);
+    }
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve("No soportado");
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          cachedInstantCoords = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+          resolve(cachedInstantCoords);
+        },
+        () => resolve(cachedInstantCoords || "Sin permiso / No disponible"),
+        { enableHighAccuracy: false, timeout: 1500, maximumAge: 60000 }
+      );
+    });
+  }
+
+  function onPhotoSelected(key, input) {
+    const file = input.files[0];
+    if (!file) return;
+    photoFiles[key] = file;
+
+    const prevDiv = document.getElementById(`prev_${key}`);
+    const objUrl = URL.createObjectURL(file);
+    prevDiv.innerHTML = `
+      <div class="d-flex align-items-center justify-content-between bg-white p-2 rounded border">
+        <div class="d-flex align-items-center gap-2 overflow-hidden">
+          <img src="${objUrl}" class="photo-preview-img" alt="Vista previa">
+          <span class="small text-truncate fw-semibold text-success">${file.name}</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearPhoto('${key}')" title="Quitar foto">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    `;
+    input.value = "";
+  }
+
+  function clearPhoto(key) {
+    photoFiles[key] = null;
+    const prevDiv = document.getElementById(`prev_${key}`);
+    if (prevDiv) prevDiv.innerHTML = "";
+  }
+
+  function getSelectedRadioValue(name) {
+    const checked = document.querySelector(`input[name="${name}"]:checked`);
+    return checked ? checked.value : "";
+  }
+
+  function setSelectedRadioValue(name, val) {
+    const radios = document.querySelectorAll(`input[name="${name}"]`);
+    radios.forEach(r => {
+      r.checked = (r.value.toUpperCase() === String(val || "").trim().toUpperCase());
+    });
+  }
+
+  function showLoader(msg) {
+    document.getElementById('loaderText').textContent = msg || 'Procesando...';
+    document.getElementById('loaderOverlay').classList.remove('hidden-field');
+  }
+
+  function hideLoader() {
+    document.getElementById('loaderOverlay').classList.add('hidden-field');
+  }
+
+  async function initApp() {
+    showLoader('Cargando listas...');
+    try {
+      const data = await apiGet('getInitialData');
+      populateSelect('in_vendedor', data.vendedores.map(v => v.nombre), 'Seleccione vendedor...');
+      populateSelect('ed_vendedor', data.vendedores.map(v => v.nombre), 'Seleccione vendedor...');
+      populateSelect('filter_vendedor', data.vendedores.map(v => v.nombre), '-- Todos los vendedores --');
+
+      populateSelect('in_solicitud', data.solicitudes, 'Seleccione solicitud...');
+      populateSelect('ed_solicitud', data.solicitudes, 'Seleccione solicitud...');
+
+      populateSelect('in_tipoActualizacion', data.actualizacionTipos, 'Seleccione opción...');
+      populateSelect('ed_tipoActualizacion', data.actualizacionTipos, 'Seleccione opción...');
+      hideLoader();
+    } catch (err) {
+      hideLoader();
+      alert('Error inicializando: ' + err.message);
+    }
+  }
+
+  function populateSelect(id, items, placeholder) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = `<option value="">${placeholder}</option>`;
+    items.forEach(val => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      sel.appendChild(opt);
+    });
+  }
+
+  function switchTab(tab) {
+    document.getElementById('tab-ingreso').classList.toggle('active', tab === 'ingreso');
+    document.getElementById('tab-modificacion').classList.toggle('active', tab === 'modificacion');
+    document.getElementById('view-ingreso').classList.toggle('hidden-field', tab !== 'ingreso');
+    document.getElementById('view-modificacion').classList.toggle('hidden-field', tab !== 'modificacion');
+    if (tab === 'modificacion') loadRecords();
+  }
+
+  function norm(str) {
+    return (str || '').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+  }
+
+  function applyConditionalRules(prefix) {
+    const sol = norm(document.getElementById(`${prefix}_solicitud`).value);
+    const tipoAct = norm(document.getElementById(`${prefix}_tipoActualizacion`).value).replace(/\s+/g, '');
+
+    const rules = {
+      tipoActualizacion: sol === 'ACTUALIZACION',
+      email: sol === 'CREACION LIDER' || sol === 'CREACION SUB USUARIO' || (sol === 'ACTUALIZACION' && tipoAct === 'EMAIL'),
+      phoneNumber: sol === 'CREACION LIDER' || sol === 'CREACION SUB USUARIO' || (sol === 'ACTUALIZACION' && tipoAct === 'PHONENUMBER'),
+      dniLider: sol === 'CREACION SUB USUARIO' || (sol === 'ACTUALIZACION' && tipoAct === 'DNILIDER'),
+      distrito: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && tipoAct === 'DIRECCION'),
+      direccion: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && tipoAct === 'DIRECCION'),
+      latitud: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && (tipoAct === 'DIRECCION' || tipoAct === 'COORDENADAS')),
+      longitud: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && (tipoAct === 'DIRECCION' || tipoAct === 'COORDENADAS')),
+      fotoDni: sol === 'CREACION LIDER',
+      fotoCoord: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && (tipoAct === 'DIRECCION' || tipoAct === 'COORDENADAS'))
+    };
+
+    Object.keys(rules).forEach(field => {
+      const wrap = document.getElementById(`${prefix}_wrap_${field}`);
+      const input = document.getElementById(`${prefix}_${field}`);
+      if (!wrap) return;
+
+      if (rules[field]) {
+        wrap.classList.remove('hidden-field');
+        if (input) input.required = true;
+      } else {
+        wrap.classList.add('hidden-field');
+        if (input) {
+          input.required = false;
+          input.value = '';
+        }
+        if (field === 'fotoDni' || field === 'fotoCoord') {
+          clearPhoto(`${prefix}_${field}`);
+        }
       }
+    });
 
-      const frame = document.getElementById("appFrame");
-      frame.style.display = "block";
-      frame.src = EXEC_URL;
-    })();
-  </script>
+    if (prefix === 'in') {
+      const showContacto = rules.email || rules.phoneNumber || rules.dniLider;
+      const showUbicacion = rules.distrito || rules.direccion || rules.latitud || rules.fotoDni || rules.fotoCoord;
+      document.getElementById('in_seg_contacto').classList.toggle('hidden-field', !showContacto);
+      document.getElementById('in_seg_ubicacion').classList.toggle('hidden-field', !showUbicacion);
+    }
+  }
+
+  function compressImage(file) {
+    return new Promise((resolve) => {
+      if (!file) return resolve("");
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_W = 960;
+          let w = img.width, h = img.height;
+          if (w > MAX_W) { h = Math.round(h * (MAX_W / w)); w = MAX_W; }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.68));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+
+    if (!currentUserEmail) {
+      return changeUserEmail();
+    }
+
+    const reqFotoDni = !document.getElementById('in_wrap_fotoDni').classList.contains('hidden-field');
+    const reqFotoCoord = !document.getElementById('in_wrap_fotoCoord').classList.contains('hidden-field');
+
+    if (reqFotoDni && !photoFiles.in_fotoDni) {
+      return alert("Por favor, captura o selecciona la FOTO DE DNI.");
+    }
+    if (reqFotoCoord && !photoFiles.in_fotoCoord) {
+      return alert("Por favor, captura o selecciona la FOTO DEL ESTABLECIMIENTO (CON COORDENADA TIMESTAMP).");
+    }
+
+    const btn = document.getElementById('btnSubmitIngreso');
+    btn.disabled = true;
+    showLoader("Guardando registro...");
+
+    try {
+      const [coordAuto, fotoDniB64, fotoCoordB64] = await Promise.all([
+        getFastCoords(),
+        compressImage(photoFiles.in_fotoDni),
+        compressImage(photoFiles.in_fotoCoord)
+      ]);
+
+      const payload = {
+        correoUsuario: currentUserEmail,
+        tipo: getSelectedRadioValue('in_tipo'),
+        vendedor: document.getElementById('in_vendedor').value,
+        solicitud: document.getElementById('in_solicitud').value,
+        tipoActualizacion: document.getElementById('in_tipoActualizacion').value,
+        numeroDocumento: document.getElementById('in_numeroDocumento').value.trim(),
+        paterno: document.getElementById('in_paterno').value.trim(),
+        materno: document.getElementById('in_materno').value.trim(),
+        nombres: document.getElementById('in_nombres').value.trim(),
+        email: document.getElementById('in_email').value.trim(),
+        phoneNumber: document.getElementById('in_phoneNumber').value.trim(),
+        dniLider: document.getElementById('in_dniLider').value.trim(),
+        distrito: document.getElementById('in_distrito').value.trim(),
+        direccion: document.getElementById('in_direccion').value.trim(),
+        latitud: document.getElementById('in_latitud').value.trim(),
+        longitud: document.getElementById('in_longitud').value.trim(),
+        coordenadaInstantanea: coordAuto,
+        fotoDniBase64: fotoDniB64,
+        fotoCoordBase64: fotoCoordB64
+      };
+
+      const res = await apiPost('saveRecord', { payload: payload });
+      btn.disabled = false;
+      hideLoader();
+      alert(res.message);
+      document.getElementById('formIngreso').reset();
+      clearPhoto('in_fotoDni');
+      clearPhoto('in_fotoCoord');
+      applyConditionalRules('in');
+    } catch (err) {
+      btn.disabled = false;
+      hideLoader();
+      alert("Error al guardar: " + err.message);
+    }
+  }
+
+  // --- FUNCIONES DE MODIFICACIÓN ---
+  async function loadRecords() {
+    showLoader("Cargando registros...");
+    try {
+      allRecords = (await apiGet('getRecords')) || [];
+      renderTable();
+      hideLoader();
+    } catch (err) {
+      hideLoader();
+      alert("Error al cargar registros: " + err.message);
+    }
+  }
+
+  function renderTable() {
+    const fVend = document.getElementById('filter_vendedor').value.trim().toUpperCase();
+    const fDni = document.getElementById('filter_dni').value.trim();
+    const tbody = document.getElementById('recordsBody');
+
+    const filtered = allRecords.filter(r => {
+      const matchVend = !fVend || r.vendedor.toUpperCase() === fVend;
+      const matchDni = !fDni || r.numeroDocumento.includes(fDni);
+      return matchVend && matchDni;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No se encontraron coincidencias.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(r => `
+      <tr>
+        <td class="fw-bold">${r.numeroDocumento}</td>
+        <td>
+          <div>${r.nombreCompleto}</div>
+          <small class="text-muted">
+            ${r.tipo ? `<span class="badge bg-info text-dark me-1">${r.tipo}</span>` : ''}
+            ${r.vendedor} • ${r.solicitudCompleta || r.solicitud}
+          </small>
+        </td>
+        <td class="small">${r.fecha}</td>
+        <td><span class="badge ${r.estado === 'PROCESADO' ? 'bg-success' : 'bg-warning text-dark'}">${r.estado}</span></td>
+        <td class="text-end text-nowrap">
+          <button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit('${r.id}')" title="Modificar">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete('${r.id}', '${r.numeroDocumento}')" title="Eliminar">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function openEdit(id) {
+    const rec = allRecords.find(r => r.id === id);
+    if (!rec) return;
+
+    clearPhoto('ed_fotoDni');
+    clearPhoto('ed_fotoCoord');
+
+    document.getElementById('ed_id').value = rec.id;
+    setSelectedRadioValue('ed_tipo', rec.tipo);
+    document.getElementById('ed_estado').value = rec.estado;
+    document.getElementById('ed_vendedor').value = rec.vendedor;
+    document.getElementById('ed_solicitud').value = rec.solicitud;
+    document.getElementById('ed_tipoActualizacion').value = rec.tipoActualizacion;
+
+    applyConditionalRules('ed');
+
+    document.getElementById('ed_numeroDocumento').value = rec.numeroDocumento;
+    document.getElementById('ed_paterno').value = rec.paterno;
+    document.getElementById('ed_materno').value = rec.materno;
+    document.getElementById('ed_nombres').value = rec.nombres;
+    document.getElementById('ed_email').value = rec.email;
+    document.getElementById('ed_phoneNumber').value = rec.phoneNumber;
+    document.getElementById('ed_dniLider').value = rec.dniLider;
+    document.getElementById('ed_distrito').value = rec.distrito;
+    document.getElementById('ed_direccion').value = rec.direccion;
+    document.getElementById('ed_latitud').value = rec.latitud;
+    document.getElementById('ed_longitud').value = rec.longitud;
+
+    document.getElementById('ed_linkFotoDni').innerHTML = rec.fotoDni 
+      ? `<a href="${rec.fotoDni}" target="_blank">Ver foto DNI actual</a>` : '';
+    document.getElementById('ed_linkFotoCoord').innerHTML = rec.fotoCoord 
+      ? `<a href="${rec.fotoCoord}" target="_blank">Ver foto del establecimiento (Timestamp) actual</a>` : '';
+
+    editModalInstance.show();
+  }
+
+  async function handleUpdate(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitEdit');
+    btn.disabled = true;
+    showLoader("Guardando cambios...");
+
+    try {
+      const [fotoDniB64, fotoCoordB64] = await Promise.all([
+        compressImage(photoFiles.ed_fotoDni),
+        compressImage(photoFiles.ed_fotoCoord)
+      ]);
+
+      const payload = {
+        id: document.getElementById('ed_id').value,
+        tipo: getSelectedRadioValue('ed_tipo'),
+        estado: document.getElementById('ed_estado').value,
+        vendedor: document.getElementById('ed_vendedor').value,
+        solicitud: document.getElementById('ed_solicitud').value,
+        tipoActualizacion: document.getElementById('ed_tipoActualizacion').value,
+        numeroDocumento: document.getElementById('ed_numeroDocumento').value.trim(),
+        paterno: document.getElementById('ed_paterno').value.trim(),
+        materno: document.getElementById('ed_materno').value.trim(),
+        nombres: document.getElementById('ed_nombres').value.trim(),
+        email: document.getElementById('ed_email').value.trim(),
+        phoneNumber: document.getElementById('ed_phoneNumber').value.trim(),
+        dniLider: document.getElementById('ed_dniLider').value.trim(),
+        distrito: document.getElementById('ed_distrito').value.trim(),
+        direccion: document.getElementById('ed_direccion').value.trim(),
+        latitud: document.getElementById('ed_latitud').value.trim(),
+        longitud: document.getElementById('ed_longitud').value.trim(),
+        fotoDniBase64: fotoDniB64,
+        fotoCoordBase64: fotoCoordB64
+      };
+
+      const res = await apiPost('updateRecord', { payload: payload });
+      btn.disabled = false;
+      editModalInstance.hide();
+      alert(res.message);
+      loadRecords();
+    } catch (err) {
+      btn.disabled = false;
+      hideLoader();
+      alert("Error al actualizar: " + err.message);
+    }
+  }
+
+  async function confirmDelete(id, dni) {
+    if (!confirm(`¿Seguro que deseas eliminar la fila con DNI ${dni}? Esta acción no se puede deshacer.`)) return;
+    showLoader("Eliminando fila...");
+    try {
+      const res = await apiPost('deleteRecord', { id: id });
+      alert(res.message);
+      loadRecords();
+    } catch (err) {
+      hideLoader();
+      alert("Error al eliminar: " + err.message);
+    }
+  }
+</script>
 </body>
 </html>
