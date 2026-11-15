@@ -633,13 +633,19 @@
         <h2 class="segment-title">Filtrar Registros</h2>
       </div>
       <div class="row g-2">
-        <div class="col-md-5">
+        <div class="col-md-4">
           <label class="form-label fw-bold">Filtrar por Vendedor</label>
           <select class="form-select" id="filter_vendedor" onchange="renderTable()">
             <option value="">-- Todos los vendedores --</option>
           </select>
         </div>
-        <div class="col-md-5">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Filtrar por Mes</label>
+          <select class="form-select" id="filter_mes" onchange="renderTable()">
+            <option value="">-- Todos los meses --</option>
+          </select>
+        </div>
+        <div class="col-md-3">
           <label class="form-label fw-bold">Filtrar por DNI (N° Documento)</label>
           <input type="text" class="form-control" id="filter_dni" placeholder="Escribe el DNI..." oninput="renderTable()">
         </div>
@@ -1193,10 +1199,82 @@
   }
 
   // --- FUNCIONES DE MODIFICACIÓN ---
+  const MESES_ES = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  function getMonthKeyFromFecha(fechaStr) {
+    const raw = String(fechaStr || "").trim();
+    if (!raw) return "";
+
+    const datePart = raw.split(" ")[0];
+    // Formato dd/MM/yyyy o d/M/yyyy
+    const slashParts = datePart.split("/");
+    if (slashParts.length === 3) {
+      const mm = slashParts[1].padStart(2, "0");
+      const yyyy = slashParts[2];
+      if (yyyy.length === 4 && !isNaN(Number(mm)) && Number(mm) >= 1 && Number(mm) <= 12) {
+        return `${yyyy}-${mm}`;
+      }
+    }
+
+    // Formato yyyy-MM-dd
+    const dashParts = datePart.split("-");
+    if (dashParts.length === 3 && dashParts[0].length === 4) {
+      const mm = dashParts[1].padStart(2, "0");
+      if (!isNaN(Number(mm)) && Number(mm) >= 1 && Number(mm) <= 12) {
+        return `${dashParts[0]}-${mm}`;
+      }
+    }
+
+    // Respaldo si viene como cadena de fecha estándar de JavaScript
+    const parsed = new Date(raw);
+    if (!isNaN(parsed.getTime())) {
+      const yyyy = parsed.getFullYear();
+      const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+      return `${yyyy}-${mm}`;
+    }
+
+    return "";
+  }
+
+  function formatMonthLabel(monthKey) {
+    const [yyyy, mm] = monthKey.split("-");
+    const idx = parseInt(mm, 10) - 1;
+    const nombreMes = MESES_ES[idx] || mm;
+    return `${nombreMes} ${yyyy}`;
+  }
+
+  function populateMonthFilter() {
+    const sel = document.getElementById('filter_mes');
+    if (!sel) return;
+    const prevVal = sel.value;
+
+    const uniqueKeys = [...new Set(
+      allRecords
+        .map(r => getMonthKeyFromFecha(r.fecha))
+        .filter(k => k !== "")
+    )].sort((a, b) => b.localeCompare(a));
+
+    sel.innerHTML = '<option value="">-- Todos los meses --</option>';
+    uniqueKeys.forEach(key => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = formatMonthLabel(key);
+      sel.appendChild(opt);
+    });
+
+    if (prevVal && uniqueKeys.includes(prevVal)) {
+      sel.value = prevVal;
+    }
+  }
+
   async function loadRecords() {
     showLoader("Cargando registros...");
     try {
       allRecords = (await apiGet('getRecords')) || [];
+      populateMonthFilter();
       renderTable();
       hideLoader();
     } catch (err) {
@@ -1207,13 +1285,15 @@
 
   function renderTable() {
     const fVend = document.getElementById('filter_vendedor').value.trim().toUpperCase();
+    const fMes = document.getElementById('filter_mes').value.trim();
     const fDni = document.getElementById('filter_dni').value.trim();
     const tbody = document.getElementById('recordsBody');
 
     const filtered = allRecords.filter(r => {
       const matchVend = !fVend || r.vendedor.toUpperCase() === fVend;
+      const matchMes = !fMes || getMonthKeyFromFecha(r.fecha) === fMes;
       const matchDni = !fDni || r.numeroDocumento.includes(fDni);
-      return matchVend && matchDni;
+      return matchVend && matchMes && matchDni;
     });
 
     if (filtered.length === 0) {
