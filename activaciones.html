@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Activaciones PDV</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; padding-bottom: 40px; }
+    .card { border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .header-title { background: linear-gradient(135deg, #0d6efd, #0b5ed7); color: white; border-radius: 12px 12px 0 0; }
+    .spinner-border-sm { display: none; }
+    .is-loading .spinner-border-sm { display: inline-block; }
+    .menu-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+    .menu-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+  </style>
+</head>
+<body>
+
+<div class="container mt-4" style="max-width: 900px;">
+  <div class="card">
+    <div class="header-title p-4 text-center">
+      <h3 class="mb-1 fw-bold">Gestión de Activaciones PDV</h3>
+      <p class="mb-0 text-white-50">Registro y administración de actividades en punto de venta</p>
+    </div>
+
+    <div class="card-body p-4">
+      
+      <div id="alertBox" class="alert d-none" role="alert"></div>
+
+      <!-- VISTA 1: MENÚ PRINCIPAL -->
+      <div id="vistaMenu" class="py-4">
+        <h5 class="text-center fw-bold text-secondary mb-4">Seleccione la opción que desea realizar:</h5>
+        <div class="row g-4 justify-content-center">
+          
+          <div class="col-md-5">
+            <div class="card menu-card border-primary h-100 text-center p-4" onclick="abrirModuloIngresar()">
+              <div class="display-4 text-primary mb-2">📝</div>
+              <h4 class="fw-bold text-primary">Ingresar</h4>
+              <p class="text-muted small mb-0">Registrar una nueva activación de punto de venta.</p>
+            </div>
+          </div>
+
+          <div class="col-md-5">
+            <div class="card menu-card border-warning h-100 text-center p-4" onclick="abrirModuloModificar()">
+              <div class="display-4 text-warning mb-2">✏️</div>
+              <h4 class="fw-bold text-dark">Modificar / Eliminar</h4>
+              <p class="text-muted small mb-0">Filtrar registros por día/activador para editar o eliminar.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- VISTA 2: MODIFICAR / FILTRAR -->
+      <div id="vistaModificar" class="d-none">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+          <h5 class="fw-bold text-secondary mb-0">🔍 Filtrar Registros de Activación</h5>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="mostrarVista('menu')">⬅️ Volver al Menú</button>
+        </div>
+
+        <div class="card bg-light border-0 mb-4">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label for="filtroFecha" class="form-label fw-bold small text-secondary">Fecha:</label>
+                <input type="date" id="filtroFecha" class="form-control">
+              </div>
+              <div class="col-md-5">
+                <label for="filtroActivador" class="form-label fw-bold small text-secondary">Persona Asignada:</label>
+                <select id="filtroActivador" class="form-select">
+                  <option value="">-- Todos --</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <button class="btn btn-primary w-100" type="button" id="btnFiltrar" onclick="filtrarRegistros()">
+                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  Buscar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle border">
+            <thead class="table-light">
+              <tr class="small text-secondary">
+                <th>Código</th>
+                <th>Fecha</th>
+                <th>Persona Asignada</th>
+                <th>PDV</th>
+                <th>Horario</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tablaResultados">
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">Seleccione filtros y haga clic en "Buscar".</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VISTA 3: FORMULARIO PRINCIPAL -->
+      <div id="vistaFormulario" class="d-none">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+          <h5 class="fw-bold text-secondary mb-0" id="tituloFormulario">📝 Nueva Activación</h5>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="mostrarVista('menu')">⬅️ Volver al Menú</button>
+        </div>
+
+        <!-- BUSCADOR POR CÓDIGO -->
+        <div class="card bg-light border-0 mb-4" id="seccionBuscadorCodigo">
+          <div class="card-body">
+            <label for="inputBuscar" class="form-label fw-bold text-secondary small">🔍 Buscar por Código (Ej: REG-0097 o 97)</label>
+            <div class="input-group">
+              <input type="text" id="inputBuscar" class="form-control" placeholder="Ej: REG-0097 o 97">
+              <button class="btn btn-outline-primary" type="button" id="btnBuscar" onclick="buscarRegistroCodigo()">
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                Buscar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <form id="formActivacion" onsubmit="procesarFormulario(event)">
+          
+          <input type="hidden" id="numFila" name="numFila" value="">
+          
+          <div class="row g-3">
+            <div class="col-md-4" id="contIdRegistro" style="display: none;">
+              <label for="idRegistro" class="form-label fw-bold">Código de Registro</label>
+              <input type="text" class="form-control bg-light" id="idRegistro" name="idRegistro" readonly>
+            </div>
+
+            <div class="col-md-4">
+              <label for="tipoActivacion" class="form-label fw-bold">Tipo de Activación <span class="text-danger">*</span></label>
+              <select class="form-select" id="tipoActivacion" name="tipoActivacion" onchange="cambiarTipoActivacion()" required>
+                <option value="">-- Seleccionar --</option>
+                <option value="Activador">Activador</option>
+                <option value="Gestor">Gestor</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="activador" id="lblActivador" class="form-label fw-bold">Persona Asignada <span class="text-danger">*</span></label>
+              <select class="form-select" id="activador" name="activador" disabled required>
+                <option value="">-- Seleccione primero el Tipo --</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="vendedor" class="form-label fw-bold">Vendedor <span class="text-danger">*</span></label>
+              <select class="form-select" id="vendedor" name="vendedor" required>
+                <option value="">Cargando vendedores...</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label for="codigoPdv" class="form-label fw-bold">Código PDV <span class="text-danger">*</span></label>
+              <input class="form-control" list="listaPdvs" id="codigoPdv" name="codigoPdv" placeholder="Escriba o busque código de PDV" oninput="completarDatosPdv()" onchange="completarDatosPdv()" required autocomplete="off">
+              <datalist id="listaPdvs"></datalist>
+            </div>
+
+            <div class="col-md-6">
+              <label for="nombrePdv" class="form-label fw-bold">Nombre PDV</label>
+              <input type="text" class="form-control" id="nombrePdv" name="nombrePdv" placeholder="Nombre del PDV">
+            </div>
+
+            <div class="col-md-6">
+              <label for="nivel" class="form-label fw-bold">Nivel</label>
+              <input type="text" class="form-control" id="nivel" name="nivel" placeholder="Nivel">
+            </div>
+
+            <div class="col-md-6">
+              <label for="distrito" class="form-label fw-bold">Distrito</label>
+              <input type="text" class="form-control" id="distrito" name="distrito" placeholder="Distrito">
+            </div>
+
+            <div class="col-md-4">
+              <label for="fechaActivacion" class="form-label fw-bold">Fecha Activación <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="fechaActivacion" name="fechaActivacion" required>
+            </div>
+
+            <div class="col-md-4">
+              <label for="horaInicio" class="form-label fw-bold">Hora Inicio <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" id="horaInicio" name="horaInicio" required>
+              <div class="form-text">08:00 AM - 07:59 PM</div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="horaFin" class="form-label fw-bold">Hora Fin <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" id="horaFin" name="horaFin" required>
+              <div class="form-text">08:00 AM - 11:59 PM</div>
+            </div>
+
+            <div class="col-12">
+              <label for="zonaCaliente" class="form-label fw-bold">Zona Caliente</label>
+              <input type="text" class="form-control" id="zonaCaliente" name="zonaCaliente" autocomplete="off" placeholder="Detalles de la zona caliente...">
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <button type="button" class="btn btn-outline-secondary" onclick="limpiarFormulario()">Limpiar Formulario</button>
+            
+            <button type="submit" class="btn btn-primary px-4" id="btnGuardar">
+              <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+              <span id="txtBtnGuardar">Guardar Registro</span>
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // =========================================================================
+  // PEGA AQUÍ LA URL (/exec) DE TU IMPLEMENTACIÓN DE GOOGLE APPS SCRIPT
+  // =========================================================================
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzo8X6JcGx3wNrHHOaEzqOlyBiqLwDqYbs03sOpxqvviYTqHcj2JEqPttzBcxxpWNwmYg/exec";
+
+  let vendedoresGlobal = [];
+  let activadoresGlobal = [];
+  let pdvsGlobal = [];
+  let cacheRegistrosFiltrados = [];
+
+  function obtenerFechaHoyLocal() {
+    const d = new Date();
+    const anio = d.getFullYear();
+    const mes = ("0" + (d.getMonth() + 1)).slice(-2);
+    const dia = ("0" + d.getDate()).slice(-2);
+    return `${anio}-${mes}-${dia}`;
+  }
+
+  async function llamarGet(params) {
+    const url = new URL(SCRIPT_URL);
+    Object.keys(params).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        url.searchParams.append(key, params[key]);
+      }
+    });
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      credentials: 'omit',
+      redirect: 'follow'
+    });
+    if (!response.ok) throw new Error("Error HTTP " + response.status);
+    return await response.json();
+  }
+
+  async function llamarPost(payload) {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      credentials: 'omit',
+      redirect: 'follow',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("Error HTTP " + response.status);
+    return await response.json();
+  }
+
+  window.onload = function() {
+    const hoy = obtenerFechaHoyLocal();
+    document.getElementById('fechaActivacion').value = hoy;
+    document.getElementById('filtroFecha').value = hoy;
+
+    if (!SCRIPT_URL || SCRIPT_URL.includes("PEGA_AQUI")) {
+      mostrarAlerta("⚠️ Falta configurar la URL del servidor (SCRIPT_URL) en el código HTML.", "warning");
+      return;
+    }
+
+    llamarGet({ action: 'obtenerDatosIniciales' })
+      .then(cargarCatalogos)
+      .catch(mostrarErrorGlobal);
+  };
+
+  function cargarCatalogos(datos) {
+    vendedoresGlobal = datos.vendedores || [];
+    activadoresGlobal = datos.activadores || [];
+    pdvsGlobal = datos.pdvs || [];
+
+    const selVend = document.getElementById('vendedor');
+    selVend.innerHTML = '<option value="">-- Seleccionar Vendedor --</option>';
+    vendedoresGlobal.forEach(v => {
+      selVend.innerHTML += `<option value="${v}">${v}</option>`;
+    });
+
+    const dlPdv = document.getElementById('listaPdvs');
+    dlPdv.innerHTML = '';
+    pdvsGlobal.forEach(p => {
+      dlPdv.innerHTML += `<option value="${p.codigo}">${p.nombre} - ${p.distrito}</option>`;
+    });
+
+    const selFiltroAct = document.getElementById('filtroActivador');
+    selFiltroAct.innerHTML = '<option value="">-- Todos --</option>';
+    const listaCombinada = Array.from(new Set([...activadoresGlobal, ...vendedoresGlobal])).sort();
+    listaCombinada.forEach(a => {
+      selFiltroAct.innerHTML += `<option value="${a}">${a}</option>`;
+    });
+  }
+
+  function mostrarVista(vista) {
+    mostrarAlerta("", "clear");
+    document.getElementById('vistaMenu').classList.add('d-none');
+    document.getElementById('vistaModificar').classList.add('d-none');
+    document.getElementById('vistaFormulario').classList.add('d-none');
+
+    if (vista === 'menu') {
+      document.getElementById('vistaMenu').classList.remove('d-none');
+    } else if (vista === 'formulario') {
+      document.getElementById('vistaFormulario').classList.remove('d-none');
+    } else if (vista === 'modificar') {
+      document.getElementById('vistaModificar').classList.remove('d-none');
+    }
+  }
+
+  function abrirModuloIngresar() {
+    limpiarFormulario(true);
+    document.getElementById('seccionBuscadorCodigo').style.display = 'none';
+    document.getElementById('tituloFormulario').innerText = "📝 Nueva Activación";
+    document.getElementById('txtBtnGuardar').innerText = "Guardar Registro";
+    mostrarVista('formulario');
+  }
+
+  function abrirModuloModificar() {
+    document.getElementById('seccionBuscadorCodigo').style.display = 'block';
+    mostrarVista('modificar');
+    filtrarRegistros();
+  }
+
+  function cambiarTipoActivacion(valorPersonaDefecto = "") {
+    const tipo = document.getElementById('tipoActivacion').value;
+    const selPersona = document.getElementById('activador');
+    const lblPersona = document.getElementById('lblActivador');
+
+    selPersona.innerHTML = '<option value="">-- Seleccionar --</option>';
+
+    let lista = [];
+    if (tipo.toLowerCase() === 'activador') {
+      lblPersona.innerHTML = 'Activador <span class="text-danger">*</span>';
+      selPersona.disabled = false;
+      lista = activadoresGlobal;
+    } else if (tipo.toLowerCase() === 'gestor') {
+      lblPersona.innerHTML = 'Gestor (Vendedor) <span class="text-danger">*</span>';
+      selPersona.disabled = false;
+      lista = vendedoresGlobal;
+    } else {
+      lblPersona.innerHTML = 'Persona Asignada <span class="text-danger">*</span>';
+      selPersona.disabled = true;
+      selPersona.innerHTML = '<option value="">-- Seleccione primero el Tipo --</option>';
+      return;
+    }
+
+    lista.forEach(a => {
+      selPersona.innerHTML += `<option value="${a}">${a}</option>`;
+    });
+
+    if (valorPersonaDefecto) {
+      seleccionarOPersistirOpcion(selPersona, valorPersonaDefecto);
+    }
+  }
+
+  function seleccionarOPersistirOpcion(selectElem, valor) {
+    if (!valor) return;
+    selectElem.value = valor;
+    if (selectElem.value !== valor) {
+      const opt = document.createElement('option');
+      opt.value = valor;
+      opt.textContent = valor;
+      selectElem.appendChild(opt);
+      selectElem.value = valor;
+    }
+  }
+
+  function completarDatosPdv() {
+    const cod = document.getElementById('codigoPdv').value.trim().toLowerCase();
+    const pdvEncontrado = pdvsGlobal.find(p => p.codigo.toLowerCase() === cod);
+
+    if (pdvEncontrado) {
+      document.getElementById('nombrePdv').value = pdvEncontrado.nombre;
+      document.getElementById('nivel').value = pdvEncontrado.nivel;
+      document.getElementById('distrito').value = pdvEncontrado.distrito;
+    }
+  }
+
+  function filtrarRegistros() {
+    mostrarAlerta("", "clear");
+    const fecha = document.getElementById('filtroFecha').value;
+    const activador = document.getElementById('filtroActivador').value;
+
+    const btn = document.getElementById('btnFiltrar');
+    btn.classList.add('is-loading');
+    btn.disabled = true;
+
+    llamarGet({ action: 'buscarRegistrosPorFiltro', fecha: fecha, activador: activador })
+      .then(renderizarTablaFiltros)
+      .catch(function(err) {
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+        mostrarErrorGlobal(err);
+      });
+  }
+
+  function renderizarTablaFiltros(res) {
+    const btn = document.getElementById('btnFiltrar');
+    btn.classList.remove('is-loading');
+    btn.disabled = false;
+
+    const tbody = document.getElementById('tablaResultados');
+    tbody.innerHTML = '';
+
+    if (!res.exito) {
+      mostrarAlerta(res.mensaje, "danger");
+      return;
+    }
+
+    cacheRegistrosFiltrados = res.registros || [];
+
+    if (cacheRegistrosFiltrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No se encontraron registros para los filtros seleccionados.</td></tr>';
+      return;
+    }
+
+    cacheRegistrosFiltrados.forEach((reg, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="fw-bold text-primary">${reg.idRegistro}</td>
+        <td>${reg.fechaActivacion}</td>
+        <td>${reg.activador} <span class="badge bg-light text-dark border">${reg.tipoActivacion || 'N/A'}</span></td>
+        <td>${reg.nombrePdv || reg.codigoPdv}</td>
+        <td><small>${reg.horaInicio} - ${reg.horaFin}</small></td>
+        <td class="text-end">
+          <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="cargarParaEdicion(${idx})">✏️ Editar</button>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarEliminar(${reg.numFila}, '${reg.idRegistro}')">🗑️ Eliminar</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function cargarParaEdicion(index) {
+    const reg = cacheRegistrosFiltrados[index];
+    if (!reg) return;
+
+    limpiarFormulario(false);
+
+    document.getElementById('numFila').value = reg.numFila;
+    document.getElementById('idRegistro').value = reg.idRegistro;
+    document.getElementById('contIdRegistro').style.display = 'block';
+
+    seleccionarOPersistirOpcion(document.getElementById('vendedor'), reg.vendedor);
+    
+    let tipo = reg.tipoActivacion || "";
+    if (tipo.toLowerCase() === "activador") tipo = "Activador";
+    if (tipo.toLowerCase() === "gestor") tipo = "Gestor";
+
+    document.getElementById('tipoActivacion').value = tipo;
+    cambiarTipoActivacion(reg.activador);
+
+    document.getElementById('codigoPdv').value = reg.codigoPdv;
+    document.getElementById('nombrePdv').value = reg.nombrePdv;
+    document.getElementById('nivel').value = reg.nivel;
+    document.getElementById('fechaActivacion').value = reg.fechaActivacion;
+    document.getElementById('horaInicio').value = reg.horaInicio;
+    document.getElementById('horaFin').value = reg.horaFin;
+    document.getElementById('distrito').value = reg.distrito;
+    document.getElementById('zonaCaliente').value = reg.zonaCaliente;
+
+    document.getElementById('tituloFormulario').innerText = "✏️ Modificar Registro (" + reg.idRegistro + ")";
+    document.getElementById('txtBtnGuardar').innerText = "Actualizar Registro";
+
+    mostrarVista('formulario');
+    mostrarAlerta("Registro cargado para edición.", "info");
+  }
+
+  function buscarRegistroCodigo() {
+    const query = document.getElementById('inputBuscar').value.trim();
+    if (!query) {
+      mostrarAlerta("Ingrese un código para buscar.", "warning");
+      return;
+    }
+
+    mostrarAlerta("", "clear");
+    const btn = document.getElementById('btnBuscar');
+    btn.classList.add('is-loading');
+    btn.disabled = true;
+
+    llamarGet({ action: 'buscarRegistro', id: query })
+      .then(function(res) {
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+
+        if (res.exito) {
+          document.getElementById('numFila').value = res.numFila;
+          document.getElementById('idRegistro').value = res.idRegistro;
+          document.getElementById('contIdRegistro').style.display = 'block';
+
+          seleccionarOPersistirOpcion(document.getElementById('vendedor'), res.vendedor);
+
+          let tipo = res.tipoActivacion || "";
+          if (tipo.toLowerCase() === "activador") tipo = "Activador";
+          if (tipo.toLowerCase() === "gestor") tipo = "Gestor";
+
+          document.getElementById('tipoActivacion').value = tipo;
+          cambiarTipoActivacion(res.activador);
+
+          document.getElementById('codigoPdv').value = res.codigoPdv;
+          document.getElementById('nombrePdv').value = res.nombrePdv;
+          document.getElementById('nivel').value = res.nivel;
+          document.getElementById('fechaActivacion').value = res.fechaActivacion;
+          document.getElementById('horaInicio').value = res.horaInicio;
+          document.getElementById('horaFin').value = res.horaFin;
+          document.getElementById('distrito').value = res.distrito;
+          document.getElementById('zonaCaliente').value = res.zonaCaliente;
+
+          document.getElementById('tituloFormulario').innerText = "✏️ Modificar Registro (" + res.idRegistro + ")";
+          document.getElementById('txtBtnGuardar').innerText = "Actualizar Registro";
+          mostrarAlerta("Registro cargado correctamente para edición.", "info");
+        } else {
+          mostrarAlerta(res.mensaje, "danger");
+        }
+      })
+      .catch(function(err) {
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+        mostrarErrorGlobal(err);
+      });
+  }
+
+  function confirmarEliminar(numFila, idRegistro) {
+    if (confirm(`¿Estás seguro de eliminar el registro ${idRegistro}?`)) {
+      mostrarAlerta("", "clear");
+      llamarPost({
+        action: 'eliminarRegistro',
+        numFila: numFila,
+        idRegistro: idRegistro
+      })
+        .then(res => {
+          if (res.exito) {
+            mostrarAlerta(res.mensaje, "success");
+            filtrarRegistros();
+          } else {
+            mostrarAlerta(res.mensaje, "danger");
+          }
+        })
+        .catch(mostrarErrorGlobal);
+    }
+  }
+
+  function obtenerObjetoFormulario() {
+    return {
+      numFila: document.getElementById('numFila').value,
+      idRegistro: document.getElementById('idRegistro').value,
+      tipoActivacion: document.getElementById('tipoActivacion').value,
+      activador: document.getElementById('activador').value,
+      vendedor: document.getElementById('vendedor').value,
+      codigoPdv: document.getElementById('codigoPdv').value,
+      nombrePdv: document.getElementById('nombrePdv').value,
+      nivel: document.getElementById('nivel').value,
+      distrito: document.getElementById('distrito').value,
+      fechaActivacion: document.getElementById('fechaActivacion').value,
+      horaInicio: document.getElementById('horaInicio').value,
+      horaFin: document.getElementById('horaFin').value,
+      zonaCaliente: document.getElementById('zonaCaliente').value
+    };
+  }
+
+  function procesarFormulario(e) {
+    e.preventDefault();
+    mostrarAlerta("", "clear");
+
+    const datosForm = obtenerObjetoFormulario();
+    const btn = document.getElementById('btnGuardar');
+    btn.classList.add('is-loading');
+    btn.disabled = true;
+
+    if (datosForm.numFila) {
+      llamarPost({
+        action: 'actualizarRespuesta',
+        data: datosForm
+      })
+        .then(res => finalizarProceso(res.mensaje, true))
+        .catch(mostrarErrorGlobal);
+    } else {
+      llamarPost({
+        action: 'guardarRespuesta',
+        data: datosForm
+      })
+        .then(res => finalizarProceso(res.mensaje, false))
+        .catch(mostrarErrorGlobal);
+    }
+  }
+
+  function finalizarProceso(mensaje, esEdicion) {
+    const btn = document.getElementById('btnGuardar');
+    btn.classList.remove('is-loading');
+    btn.disabled = false;
+
+    if (mensaje && mensaje.startsWith("Error")) {
+      mostrarAlerta(mensaje, "danger");
+    } else {
+      mostrarAlerta(mensaje || "Operación completada.", "success");
+      if (!esEdicion) {
+        limpiarFormulario(false);
+      } else {
+        setTimeout(() => {
+          mostrarVista('modificar');
+          filtrarRegistros();
+        }, 1500);
+      }
+    }
+  }
+
+  function limpiarFormulario(limpiarAlerta = true) {
+    document.getElementById('formActivacion').reset();
+    cambiarTipoActivacion();
+    
+    document.getElementById('numFila').value = '';
+    document.getElementById('idRegistro').value = '';
+    document.getElementById('contIdRegistro').style.display = 'none';
+    document.getElementById('tituloFormulario').innerText = "📝 Nueva Activación";
+    document.getElementById('txtBtnGuardar').innerText = "Guardar Registro";
+    
+    const hoy = obtenerFechaHoyLocal();
+    document.getElementById('fechaActivacion').value = hoy;
+
+    if (limpiarAlerta) mostrarAlerta("", "clear");
+  }
+
+  function mostrarAlerta(msg, tipo) {
+    const box = document.getElementById('alertBox');
+    if (tipo === "clear") {
+      box.className = "alert d-none";
+      box.innerText = "";
+      return;
+    }
+    box.className = `alert alert-${tipo} d-block`;
+    box.innerText = msg;
+  }
+
+  function mostrarErrorGlobal(err) {
+    const btnG = document.getElementById('btnGuardar');
+    const btnB = document.getElementById('btnBuscar');
+    const btnF = document.getElementById('btnFiltrar');
+    if (btnG) { btnG.classList.remove('is-loading'); btnG.disabled = false; }
+    if (btnB) { btnB.classList.remove('is-loading'); btnB.disabled = false; }
+    if (btnF) { btnF.classList.remove('is-loading'); btnF.disabled = false; }
+    mostrarAlerta("Error de conexión: " + err.toString(), "danger");
+  }
+</script>
+
+</body>
+</html>
