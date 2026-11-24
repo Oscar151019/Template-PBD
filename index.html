@@ -17,7 +17,7 @@
       --surface-white: #ffffff;
     }
 
-    * {
+    *, *::before, *::after {
       box-sizing: border-box;
     }
 
@@ -561,7 +561,7 @@
             <input type="text" class="form-control text-uppercase" id="in_distrito">
           </div>
           <div class="col-md-7 hidden-field" id="in_wrap_direccion">
-            <label class="form-label fw-bold">DIRECCIÓN *</label>
+            <label class="form-label fw-bold" id="in_lbl_direccion">DIRECCIÓN *</label>
             <input type="text" class="form-control text-uppercase" id="in_direccion">
           </div>
 
@@ -773,7 +773,7 @@
                 <input type="text" class="form-control text-uppercase" id="ed_distrito">
               </div>
               <div class="col-md-7 hidden-field" id="ed_wrap_direccion">
-                <label class="form-label fw-bold">DIRECCIÓN *</label>
+                <label class="form-label fw-bold" id="ed_lbl_direccion">DIRECCIÓN *</label>
                 <input type="text" class="form-control text-uppercase" id="ed_direccion">
               </div>
 
@@ -857,7 +857,6 @@
     ed_fotoCoord: null
   };
 
-  // Comunicación directa sin enviar cookies de Google (evita error /u/1/ en cualquier navegador)
   async function apiGet(action) {
     const url = `${EXEC_URL}?action=${encodeURIComponent(action)}&_t=${Date.now()}`;
     const resp = await fetch(url, {
@@ -1059,19 +1058,26 @@
     const sol = norm(document.getElementById(`${prefix}_solicitud`).value);
     const tipoAct = norm(document.getElementById(`${prefix}_tipoActualizacion`).value).replace(/\s+/g, '');
     const isSubUsuario = sol === 'CREACION SUB USUARIO' || sol === 'CREACION DE SUB USUARIO' || sol === 'CREACION SUB-USUARIO';
+    const isCoordUpdate = sol === 'ACTUALIZACION' && tipoAct.includes('COORDENAD');
+    const isDirUpdate = sol === 'ACTUALIZACION' && tipoAct === 'DIRECCION';
 
     const rules = {
       tipoActualizacion: sol === 'ACTUALIZACION',
       email: sol === 'CREACION LIDER' || isSubUsuario || (sol === 'ACTUALIZACION' && tipoAct === 'EMAIL'),
       phoneNumber: sol === 'CREACION LIDER' || isSubUsuario || (sol === 'ACTUALIZACION' && tipoAct === 'PHONENUMBER'),
       dniLider: isSubUsuario || (sol === 'ACTUALIZACION' && tipoAct === 'DNILIDER'),
-      distrito: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && tipoAct === 'DIRECCION'),
-      direccion: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && tipoAct === 'DIRECCION'),
-      latitud: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && (tipoAct === 'DIRECCION' || tipoAct === 'COORDENADAS')),
-      longitud: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && (tipoAct === 'DIRECCION' || tipoAct === 'COORDENADAS')),
+      distrito: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || isDirUpdate,
+      direccion: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || isDirUpdate || isCoordUpdate,
+      latitud: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || isDirUpdate || isCoordUpdate,
+      longitud: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || isDirUpdate || isCoordUpdate,
       fotoDni: sol === 'CREACION LIDER' || isSubUsuario,
-      fotoCoord: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || (sol === 'ACTUALIZACION' && (tipoAct === 'DIRECCION' || tipoAct === 'COORDENADAS'))
+      fotoCoord: sol === 'CREACION LIDER' || sol === 'SUCURSAL' || isDirUpdate || isCoordUpdate
     };
+
+    const lblDir = document.getElementById(`${prefix}_lbl_direccion`);
+    if (lblDir) {
+      lblDir.textContent = isCoordUpdate ? 'DIRECCIÓN *' : 'DIRECCIÓN *';
+    }
 
     Object.keys(rules).forEach(field => {
       const wrap = document.getElementById(`${prefix}_wrap_${field}`);
@@ -1209,7 +1215,6 @@
     if (!raw) return "";
 
     const datePart = raw.split(" ")[0];
-    // Formato dd/MM/yyyy o d/M/yyyy
     const slashParts = datePart.split("/");
     if (slashParts.length === 3) {
       const mm = slashParts[1].padStart(2, "0");
@@ -1219,7 +1224,6 @@
       }
     }
 
-    // Formato yyyy-MM-dd
     const dashParts = datePart.split("-");
     if (dashParts.length === 3 && dashParts[0].length === 4) {
       const mm = dashParts[1].padStart(2, "0");
@@ -1228,7 +1232,6 @@
       }
     }
 
-    // Respaldo si viene como cadena de fecha estándar de JavaScript
     const parsed = new Date(raw);
     if (!isNaN(parsed.getTime())) {
       const yyyy = parsed.getFullYear();
